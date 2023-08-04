@@ -1,0 +1,262 @@
+#!/bin/bash -e
+
+#Configure firewall
+FRAMEWORK_FIREWALL_CONF="/etc/iptables/rules009-framework.iptables"
+NFSEN_IPTABLES_RULES="/etc/iptables/rules0100-nfsen.iptables"
+RESET_SQUID_FIREWALL="/usr/share/alienvault-center/lib/reset_squid_firewall.pl"
+
+configure_firewall(){
+    ###
+    ### Firewall configuration
+    ###
+    changed=0
+    ports=`perl -e '
+{
+    package Nfsen::Config;
+    require "/etc/nfsen/nfsen.conf"
+}
+no warnings;
+for my $flowname ( keys %Nfsen::Config::sources) {
+    print "$Nfsen::Config::sources{$flowname}{'port'}\n"
+}
+exit' $ports`
+
+    # Check if the rule for this port was already included in the rules0100-nfsen.iptables file
+    for myport in $ports; do
+        lines=$(grep -c "$myport" $NFSEN_IPTABLES_RULES || true; )
+        if [ ${#lines} != 0 ] && [ $lines != 0 ]; then
+            echo "Port $myport already included in the iptables rules"
+        else
+            newrule="-A INPUT -p udp --dport $myport -j ACCEPT"
+            echo $newrule >> $NFSEN_IPTABLES_RULES
+            changed=1
+        fi
+        sed -i -e "/--dport[[:blank:]]*$myport/d" $FRAMEWORK_FIREWALL_CONF
+    done
+
+}
+
+chown root:root $RESET_SQUID_FIREWALL
+chmod 750 $RESET_SQUID_FIREWALL
+
+#Now make effective the firewall configuration
+[ ! -f "/etc/nfsen/nfsen.conf" ] || configure_firewall
+
+#Restart iptables (we need to apply at least the rules already included in the file)
+dpkg-trigger --no-await alienvault-restart-firewall
+
+
+# Remove /etc/cron.d/otx-debugger if exists
+if [ -f /etc/cron.d/otx-debugger ]
+then
+    rm /etc/cron.d/otx-debugger
+fi
+
+
+#Remove NFsen commands from sudoers
+sed -i "/etc/sudoers" \
+    -e "/^www\-data.*\/usr\/bin\/nfsen.*$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/nfsen\_reconfig\.sh$/d"
+
+
+#Remove old OpenVAS commands from sudoers
+sed -i "/etc/sudoers" \
+    -e "/^www\-data.*\/usr\/sbin\/greenbone\-nvt\-sync$/d" \
+    -e "/^www\-data.*\/usr\/sbin\/openvas\-nvt\-sync$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/vulnmeter\/fix\_openvas\_plugins\.sh/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/vulnmeter\/openvas\_rebuild\.sh/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/vulnmeter\/cancel\_scan\.pl/d"
+
+
+#Remove old scripts from sudoers
+sed -i "/etc/sudoers" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossim\_services\.sh$/d"
+
+sed -i '/nmap/d' /etc/sudoers
+
+
+# Nmap ownership & permissions
+# UPDATE FROM OLDER VERSION: Note that the check for permissions is for reverting an unnecessary change in previous installs.
+[ ! -f /usr/bin/nmap ] || chgrp www-data /usr/bin/nmap
+[ $(stat -c %a /usr/bin/nmap || true) = "750" ] || chmod 0750 /usr/bin/nmap
+
+
+webservers="apache apache-ssl apache2"
+for apache in $webservers; do
+    if [ -d "/etc/$apache/conf.d" ] && \
+       [ -x "/etc/init.d/$apache" ] && \
+       [ ! -e "/etc/$apache/conf.d/ossim.conf" ]
+    then
+        echo "Installing ossim configuration file for $apache ..."
+        ln -sf /etc/ossim/framework/apache.conf \
+            /etc/$apache/conf.d/ossim.conf
+        if [ -f "/var/run/$apache.pid" ]; then
+            invoke-rc.d $apache reload
+        fi
+    fi
+done
+
+
+# favicon.ico
+if [ -f /usr/share/ossim/www/favicon.ico ]; then
+    cp -f /usr/share/ossim/www/favicon.ico /var/www/favicon.ico
+fi
+
+
+# UI uploads
+if [ ! -d /usr/share/ossim/www/uploads/ ]; then
+    mkdir /usr/share/ossim/www/uploads/
+fi
+chown -R www-data:www-data /usr/share/ossim/www/uploads/
+
+
+# Vulnerabilities
+if [ ! -d /usr/share/ossim/www/vulnmeter/tmp/ ]; then
+    mkdir /usr/share/ossim/www/vulnmeter/tmp/
+fi
+chown www-data:www-data /usr/share/ossim/www/vulnmeter/tmp/
+
+
+# Scheduled reports
+chown -R www-data:www-data /usr/share/ossim/www/tmp/
+if [ ! -d /usr/share/ossim/www/tmp/scheduler ]; then
+    mkdir /usr/share/ossim/www/tmp/scheduler
+fi
+chown www-data:www-data /usr/share/ossim/www/tmp/headers/
+chown www-data:www-data /usr/share/ossim/www/tmp/scheduler/
+
+
+# SIEM
+chown www-data:www-data /usr/share/ossim/www/forensics/tmp/
+
+
+# KDB and Custom Collectors
+if [ ! -d /usr/share/ossim/uploads/ ]; then
+    mkdir /usr/share/ossim/uploads/
+fi
+chown -R www-data:www-data /usr/share/ossim/uploads/
+
+
+# PHP-IDS log file and default_filter.cache
+if [ ! -e "/var/log/php-ids.log" ]; then
+    touch "/var/log/php-ids.log"
+    chown www-data "/var/log/php-ids.log"
+fi
+touch "/var/tmp/default_filter.cache"
+chown www-data.www-data "/var/tmp/default_filter.cache"
+chmod 600 "/var/tmp/default_filter.cache"
+rm -f "/tmp/default_filter.cache"
+
+if [ ! -d /usr/share/ossim/include/IDS/tmp ]; then
+    mkdir /usr/share/ossim/include/IDS/tmp
+fi
+
+if [ -d /usr/share/ossim/include/IDS/tmp ]; then
+    # prevent wrong perm if default_filter.cache is missing or renewed (touch)
+    touch /usr/share/ossim/include/IDS/tmp/default_filter.cache
+    chown -R www-data:www-data /usr/share/ossim/include/IDS/tmp
+fi
+
+
+# Asset trees json cache
+if [ ! -d /var/ossim/sessions ]; then
+    rm -f /var/ossim/sessions
+    mkdir -p /var/ossim/sessions
+    chown www-data:www-data /var/ossim/sessions
+else
+    rm -f /var/ossim/sessions/*
+fi
+
+# Sem log file
+if [ ! -d /var/log/ossim/ ]; then
+    mkdir -p /var/log/ossim/
+fi
+touch /var/log/ossim/sem.log
+echo "Enable debug at /usr/share/ossim/www/sem/everything.ini" >> /var/log/ossim/sem.log
+chown www-data:www-data /var/log/ossim/sem.log
+
+
+# getpcap.py log file
+if [ ! -d /var/log/ossim/ ]; then
+    mkdir -p /var/log/ossim/
+fi
+touch /var/log/ossim/getpcap.log
+echo "Enable debug at /usr/share/ossim/www/pcap/getpcap.py" >> /var/log/ossim/getpcap.log
+chown www-data:www-data /var/log/ossim/getpcap.log
+
+
+# Perl
+cp -f /usr/share/ossim/include/ossim_conf.pm /usr/lib/perl5/ossim_conf.pm
+
+
+# av_web_steward.py
+if [ ! -f "/var/log/ossim/av_web_steward.log" ]; then
+        touch /var/log/ossim/av_web_steward.log
+        chown www-data /var/log/ossim/av_web_steward.log
+fi
+
+
+# Used for dumping forwarding sql updates
+# See scripts/assets_sync.sh
+install -d -g www-data -m 2775 /var/lib/alienvault-center/db
+
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+# Web UI Log file
+mkdir -p /var/log/alienvault/ui/
+touch /var/log/alienvault/ui/ui.log
+chown -R www-data:alienvault /var/log/alienvault/ui
+
+#Migrate certificates.
+OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+CERTIFICATE_FILE="/etc/ssl/private/custom_ui_certificate.crt"
+PRIVATE_KEY_FILE="/etc/ssl/private/custom_ui_private.key"
+
+FRAMEWORK_HTTPS_CERT=$(awk -F '=' '/\<framework_https_cert\>/ {print $2}' "$OSSIM_SETUP_CONF")
+FRAMEWORK_HTTPS_KEY=$(awk -F '=' '/\<framework_https_key\>/ {print $2}' "$OSSIM_SETUP_CONF")
+
+if [ $FRAMEWORK_HTTPS_CERT != "default" ] && [ -f "$FRAMEWORK_HTTPS_CERT" ]
+then
+    CERT_VALUE=`cat $FRAMEWORK_HTTPS_CERT`
+    cp -f "$FRAMEWORK_HTTPS_CERT" "$CERTIFICATE_FILE"
+    echo "REPLACE INTO config VALUES('framework_https_cert_plain', '$CERT_VALUE');" | ossim-db || true
+    echo "REPLACE INTO config VALUES('framework_https_crt', '$CERTIFICATE_FILE');" | ossim-db || true
+    sed -i 's|framework_https_cert='$FRAMEWORK_HTTPS_CERT'|framework_https_cert=default|g' $OSSIM_SETUP_CONF
+fi
+
+if [ $FRAMEWORK_HTTPS_KEY != "default" ] && [ -f "$FRAMEWORK_HTTPS_KEY" ]
+then
+    KEY_VALUE=`cat $FRAMEWORK_HTTPS_KEY`
+    cp -f "$FRAMEWORK_HTTPS_KEY" "$PRIVATE_KEY_FILE"
+    echo "REPLACE INTO config VALUES('framework_https_pem_plain', '$KEY_VALUE');" | ossim-db || true
+    echo "REPLACE INTO config VALUES('framework_https_pem', '$PRIVATE_KEY_FILE');" | ossim-db || true
+    sed -i 's|framework_https_key='$FRAMEWORK_HTTPS_KEY'|framework_https_key=default|g' $OSSIM_SETUP_CONF
+
+fi
+
+
+# Find and remove any disposable CVS and Makefiles remains
+
+find /usr/share/ossim/ -name CVS | xargs rm -rf
+find /usr/share/ossim/ -name Makefile | xargs rm -rf
+find /usr/share/ossim/ -name Makefile\.\* | xargs rm -rf
+
+[ -d /root/.ssh ] || mkdir -m 0775 /root/.ssh
+if [ ! -d /etc/ossim/framework/ssh ]; then
+	mkdir -m 0775 -p /etc/ossim/framework/ssh
+	chown www-data. /etc/ossim/framework/ssh
+fi
+
+
+# Clean API sessions
+rm -f /var/tmp/api_cookie_jar_*
+
+
+# Launch mysql schema updates
+echo Updating DB schema
+date -R >> /var/log/ossim/update_db.log
+php /usr/share/ossim/scripts/update_db.php >> /var/log/ossim/update_db.log 2>&1
+
+exit 0

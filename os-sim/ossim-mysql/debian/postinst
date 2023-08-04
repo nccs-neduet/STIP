@@ -1,0 +1,54 @@
+#!/bin/bash
+# ossim-mysql.postinst
+
+
+case "$1" in
+	configure)
+
+	if [ ! -f "/etc/ossim/ossim_setup.conf" ]; then
+        echo "ossim_Setup.conf not found, skip configuration."
+        exit 0;
+    fi
+
+	IS_DATABASE=$(grep -m1 -s -E "^profile=.*(D|d)atabase.*" "$OSSIM_SETUP_CONF_FILE" || true)
+
+    ## run original update scripts:
+
+    # Make sure that MySQL is running
+     if [ ! -z "$IS_DATABASE" ]; then
+	    service mysql status > /dev/null
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            /etc/init.d/mysql start
+        fi
+	fi
+
+
+    # suricata update:
+	srdpi="/var/lib/dpkg/info/suricata-rules-default.postinst"
+	if [ -f "$srdpi" ]; then
+		echo " suricata plugin additional update:"
+		/bin/bash "$srdpi" configure
+	fi
+
+    # taxonomy update (includes repriorize):
+	otpi="/var/lib/dpkg/info/ossim-taxonomy.postinst"
+	if [ -f "$otpi" ]; then
+		echo "Taxonomy update:"
+		/bin/bash "$otpi" configure
+	fi
+
+        echo "done."
+	;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+	echo "postinst called with unknown argument \$1'" >&2
+	exit 1
+    ;;
+esac
+
+
+exit 0

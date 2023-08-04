@@ -1,0 +1,60 @@
+#!/bin/bash -e
+
+ALIENVAULT_GROUP="alienvault"
+ALIENVAULT_DIR="/etc/alienvault"
+AVAPI_USER="avapi"
+
+# Check for default users, groups and directories.
+if ! getent group "$ALIENVAULT_GROUP" > /dev/null; then
+	addgroup --quiet --system "$ALIENVAULT_GROUP"
+fi
+
+[ -d "$ALIENVAULT_DIR" ] || mkdir -p -m 770 "$ALIENVAULT_DIR"
+chgrp "$ALIENVAULT_GROUP" "$ALIENVAULT_DIR" -R
+
+if ! getent passwd "$AVAPI_USER" > /dev/null; then
+    adduser  --system --shell /bin/bash --ingroup "$ALIENVAULT_GROUP" --gecos "AlienVault API user" "$AVAPI_USER"
+fi
+
+# Removed deprecated scripts
+blist="check_makefile.sh check_updates.pl check_vars.pl chkconfig.pl checkEvents.py datasource_detect.pl gen_netscreen_nsm.pl "
+blist+="gen_src_tarball.sh getEpo.py get_date.pl get_osvdb.pl spada.py snort_maintenance.pl"
+
+for scrpt in $blist; do
+    if [ -f /usr/share/ossim/scripts/$scrpt ]; then
+		rm -f /usr/share/ossim/scripts/$scrpt
+    fi
+done
+
+# Removed deprecated vulnmeter scripts
+blist="cancel_scan.pl nessus_wrapper.sh fix_openvas_plugins.sh nessus_filter.pl openvas_rebuild.sh updateplugins.pl update_nessus_ids.pl"
+
+for scrpt in $blist; do
+    if [ -f /usr/share/ossim/scripts/vulnmeter/$scrpt ]; then
+		rm -f /usr/share/ossim/scripts/vulnmeter/$scrpt
+    fi
+done
+
+
+# Removed deprecated directories
+blist="correlation extract_nessus extract_osvdb"
+
+for script_dir in $blist; do
+    if [ -d /usr/share/ossim/scripts/$script_dir ]; then
+		rm -rf /usr/share/ossim/scripts/$script_dir
+    fi
+done
+
+if [ -d /var/ossim/sessions ]; then
+	rm -f /var/ossim/sessions/* || true
+fi
+
+CONFIG=/etc/ossim/framework/ossim.conf
+if [ -f $CONFIG ]; then
+    echo "Setting up permissions for $CONFIG"
+    chmod 640 $CONFIG
+else
+    echo "WARNING: $CONFIG has not been installed"
+fi
+
+exit 0

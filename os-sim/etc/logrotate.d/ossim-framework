@@ -1,0 +1,10 @@
+/var/log/ossim/frameworkd.log /var/log/ossim/frameworkd_error.log /var/log/ossim/framework-notifications.log{
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    size 1024M
+    create 640 root root
+}
+

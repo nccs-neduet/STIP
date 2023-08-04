@@ -1,0 +1,166 @@
+#!/bin/sh
+# postinst script for alienvault-api
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+monitor_check_platform_telemetry_data() {
+    FILE=$1
+    # TASK: monitor_check_platform_telemetry_data (Task deprecated since v5.8.10)
+    if [ -s $FILE ] && [ `grep -i 'monitor_check_platform_telemetry_data:' $FILE` ]; then
+        #Format:
+        # monitor_check_platform_telemetry_data:
+        #   enabled: true
+        #   task_name: monitor_check_platform_telemetry_data
+
+        #We don't know if telemetry is disabled (enabled field doesn't exist) or enabled neither which field is the first
+
+        #Get line number of the task
+        FIRST_NL=$(grep -n "monitor_check_platform_telemetry_data:" $FILE | cut -f1 -d:)
+
+        #Remove task_name field that always exists
+        sed -i "/task_name: monitor_check_platform_telemetry_data/d" $FILE
+
+        #Telemetry was enabled, we have to delete 2 lines
+        if grep -oqPz "monitor_check_platform_telemetry_data:\n.*enabled:.*\n.*" $FILE; then
+           LAST_NL=$(($FIRST_NL + 1))
+           sed -i "${FIRST_NL},${LAST_NL}d" $FILE
+        else
+           #Telemetry was disabled, we have to delete only 1 line
+           sed -i "${FIRST_NL}d" $FILE
+        fi
+    fi
+}
+
+case "$1" in
+    configure)
+        # Check for api user & group, just in case...
+        if ! getent group alienvault > /dev/null; then
+	        addgroup --quiet --system alienvault
+        fi
+
+        if ! getent passwd avapi > /dev/null; then
+	        adduser  --home /home/avapi  --system --shell /bin/bash --ingroup alienvault --gecos "AlienVault SIEM" avapi
+        fi
+
+        if [ ! -d /home/avapi/.ssh ]
+        then
+	        mkdir /home/avapi/.ssh
+	        chmod 0750 /home/avapi/.ssh
+	        chown avapi:alienvault  /home/avapi/.ssh
+        fi
+
+        if [ -f /home/avapi/.ssh/known_hosts ]
+        then
+            ssh-keygen -R 127.0.0.1 -f /home/avapi/.ssh/known_hosts
+            ssh-keygen -R localhost -f /home/avapi/.ssh/known_hosts
+        fi
+        ssh-keyscan 127.0.0.1 localhost >> /home/avapi/.ssh/known_hosts
+        chown avapi:alienvault /home/avapi/.ssh/known_hosts
+        chmod 600  /home/avapi/.ssh/known_hosts
+        chown -f avapi:alienvault /home/avapi/.ssh/known_hosts.old || true
+
+        # Check for permissions in /etc/ossim.
+        [ -d /etc/ossim ] || exit -1
+        chgrp alienvault /etc/ossim -R
+
+        # Check for permissions in /etc/alienvault/api
+        [ -d /etc/alienvault/api ] || exit -1
+        chown -R avapi:alienvault /etc/alienvault/api/
+        chmod -R 0770 /etc/alienvault/api
+
+        # Add the listen port 40011 to /etc/apache2/ports.conf
+        grep --fixed-strings --quiet "Listen 40011" /etc/apache2/ports.conf || echo "Listen 40011"  >> /etc/apache2/ports.conf
+
+        # Create secret key
+        if [ ! -f /usr/share/python/alienvault-api/secret.py ]
+        then
+            echo "key = '$(pwgen -s 24)'" > /usr/share/python/alienvault-api/secret.py
+        fi
+
+        # Fix a condition specific to versions < 4.12.0
+        if [ ! -z "$2" ]; then
+            if dpkg --compare-versions "$2" le "4.12.0"; then
+                kill -9 `pgrep -f celeryd`  > /dev/null 2>&1 || true
+                kill -9 `pgrep -f celerybeat`  > /dev/null 2>&1 || true
+            fi
+        fi
+
+        # Set scripts as executables.
+        if [ -d "/usr/share/python/alienvault-api/scripts/" ]; then
+            chown avapi:alienvault /usr/share/python/alienvault-api/scripts/*
+            chmod 770 /usr/share/python/alienvault-api/scripts/*
+        fi
+
+        # Enable the apache2 configuration.
+        if [ -x "/usr/sbin/a2ensite" ]; then
+           a2ensite alienvault-api.conf
+        fi
+
+        # Add control wait to secure rabbitmq restarts
+        if ! grep -q "timeout 60" /etc/init.d/rabbitmq-server; then
+            sed -i 's/$CONTROL wait/timeout 60 $CONTROL wait/' /etc/init.d/rabbitmq-server
+        fi
+
+        # Checking the celery tasks.
+
+        # TASK: usm_central_status (Task moved from default_tasks.yml to custom_tasks.yml)
+        IS_CONNECT_TO_CENTRAL=$(echo "select value from config where conf = 'usm_central_token';" | ossim-db | tail -n1)
+        CUSTOM_TASK_FILE="/etc/alienvault/api/custom_tasks.yml"
+        if [ "$IS_CONNECT_TO_CENTRAL" != "" ]; then
+            if [ ! -s $CUSTOM_TASK_FILE ]; then
+                echo -e "# DO NOT MODIFY THIS FILE.\n# AlienVault tasks file.\n# This is auto-generated by the alienvault-api." > $CUSTOM_TASK_FILE
+            fi
+
+            # Checking if it is active in custom_tasks
+            if ! grep -iq 'usm_central_status' $CUSTOM_TASK_FILE; then
+                echo -e "usm_central_status:\n  enabled: True\n  task_name: usm_central_status" >> $CUSTOM_TASK_FILE
+            fi
+        fi
+
+        monitor_check_platform_telemetry_data $CUSTOM_TASK_FILE
+        monitor_check_platform_telemetry_data $CUSTOM_TASK_FILE.bak
+
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-restart-apache2)
+                ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

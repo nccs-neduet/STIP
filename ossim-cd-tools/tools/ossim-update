@@ -1,0 +1,5 @@
+#!/bin/bash
+
+alienvault58-update.py $@
+
+exit 0

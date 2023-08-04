@@ -1,0 +1,57 @@
+Source: alienvault-api-core
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 9),
+  python2.7,
+  python2.7-dev,
+  python-setuptools,
+  devscripts,
+  dh-virtualenv (>= 0.7),
+  libglib2.0-dev (= 2.50.3-2),
+  librrd-dev (>= 1.4.8),
+  libmariadbclient-dev,
+  libssl-dev (>= 1.0.1),
+  libffi-dev (>= 3.1),
+  git,
+  apt-utils,
+  libxml2-dev,
+  libcairo2-dev,
+  libpango1.0-dev
+XS-Python-Version: 2.7
+Standards-Version: 3.9.6
+
+Package: alienvault-api-core
+Architecture: any
+XB-Python-Version: 2.7
+Pre-Depends: ${misc:Pre-Depends},
+ adduser,
+ dpkg (>= 1.17),
+ python,
+ sudo
+Depends: ${misc:Depends},
+ sshpass,
+ pigz,
+ augeas-tools,
+ lsb-base (>= 3.0-6),
+ libglib2.0-0 (>= 2.12),
+ librrd8,
+ libmariadbclient18,
+ libssl1.1 (>= 1.0.1),
+ libffi6 (>= 3.1),
+ python-yaml
+Provides: alienvault-api-core
+Conflicts: alienvault-api-scripts
+Replaces: alienvault-api-scripts
+Description: The AlienVault API core package
+ AlienVault API is an extensible and flexible way to access the platform
+ data and services.
+ .
+ It is meant to be the kernel of the AlienVault information system and a
+ gate for developers to integrate new applications.
+ .
+ This package provides the basic methods to access the API
+ .
+ Homepage: http://www.alienvault.com
+
+

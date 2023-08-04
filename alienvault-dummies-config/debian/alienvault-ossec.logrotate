@@ -1,0 +1,12 @@
+/var/ossec/logs/ossec.log
+{
+        rotate 7
+        daily
+        missingok
+        notifempty
+        copytruncate
+        delaycompress
+        compress
+        create 640 ossec www-data
+        su root www-data
+}

@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+export DH_VIRTUALENV_INSTALL_ROOT=/usr/share/python
+export DH_PIP_EXTRA_ARGS="--ignore-installed --no-deps --no-cache-dir --trusted-host pypi.org --tursted-host files.pythonhosted.org"
+%:
+	dh $@ --with python-virtualenv
+
+override_dh_virtualenv:
+	dh_virtualenv
+	find . -type f -name *.pyc -exec rm {} \;
+	# A little trickery here...
+	# So, ansible, celeryd and maybe some other packages can be executed using a different user.
+	# But python refuses to acknowledge the new user home directory and uses the previous one instead.
+	# This fixes that.
+	sed -i '/export PATH/a export HOME="/home/avapi"' $(CURDIR)/debian/alienvault-api-core/usr/share/python/alienvault-api-core/bin/activate

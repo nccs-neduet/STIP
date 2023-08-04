@@ -1,0 +1,65 @@
+#!/bin/sh
+# postinst script for alienvault-hyperv-*
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+set_scheduler() {
+    #setting scheduler option through udev options to make it permanent after reboot
+    echo -e "#set scheduler option\nACTION==\"add|change\", KERNEL==\"sd[a-z]*\", ATTR{queue/scheduler}=\"none\"" > /etc/udev/rules.d/60-ioschedulers.rules
+    #applying udev changes to be enabled without rebooting
+    udevadm control --reload-rules && udevadm trigger
+}
+
+case "$1" in
+    configure)
+        set_scheduler
+## hyperv splash disable temporal workaround.-
+## next fragment is a first attempt
+#        sed -i -e "s/\<splash vga=792\>//g" /etc/default/grub
+#        /usr/sbin/update-grub2
+# no true effect here, because presumibly is being overwriten in a post process (common/plymouth config postins or trigger)
+## so now it is handled (string is removed) in packer's provisioning script 'hypervsplasdisabletemporalworkaround.sh' (hyperv splash disable temporal workaround), which runs at the end of the deliverable building (builder is vmware-iso) process
+## -.
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-hyperv-set-scheduler)
+                    set_scheduler
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                    ;;
+            esac
+        done
+        ;;
+
+
+    abort-upgrade|abort-deconfigure|abort-remove)
+        ;;
+
+    *)
+        echo "$0 called with unknown argument \`$1'" 1>&2
+        exit 1
+        ;;
+esac
+
+
+exit 0

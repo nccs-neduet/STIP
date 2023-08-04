@@ -1,0 +1,5 @@
+usr/lib/perl5/
+usr/share/ossim/scripts/
+usr/share/ossim/scripts/forensics
+etc/ossim/framework/
+var/log/alienvault/scripts/
