@@ -5,7 +5,7 @@ MarkupSafe==0.18
 MySQL-python==1.2.4
 PyMySQL==0.5
 PyYAML==3.10
-Pygments==1.6
+Pygments==2.15.0
 SQLAlchemy==0.8.2
 Sphinx==1.2b1
 Werkzeug==0.9.1
