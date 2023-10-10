@@ -39,7 +39,8 @@ from apimethods.plugin.plugin import (
     apimethod_get_plugin_list,
     apimethod_upload_plugin,
     apimethod_download_plugin,
-    apimethod_remove_plugin
+    apimethod_remove_plugin,
+    apimethod_save_plugin
 )
 from apiexceptions import APIException
 
@@ -115,3 +116,25 @@ def remove():
     except APIException as e:
         return make_error_from_exception(e)
     return make_ok()
+
+@blueprint.route('/save', methods=['POST'])
+@admin_permission.require(http_exception=403)
+@accepted_url({'plugin_file': str,'plugin_id': str,'vendor': str,'model': str,'version': str,'product_type': str,'nsids': str})
+def save():
+    try:
+        plugin_file = request.form['plugin_file']
+        plugin_id = request.form['plugin_id']
+        vendor = request.form['vendor']
+        model = request.form['model']
+        version = request.form['version']
+        product_type = request.form['product_type']
+        nsids = request.form['nsids']
+        
+        result = apimethod_save_plugin(plugin_file=plugin_file,plugin_id=plugin_id,vendor=vendor,model=model,version=version,product_type=product_type,nsids=nsids)
+
+        # response = make_response(data)
+        # response.headers["Content-Disposition"] = "attachment; filename={}".format(plugin_file)
+    except APIException as e:
+        return make_error_from_exception(e)
+    return make_ok(contents=result)
+    

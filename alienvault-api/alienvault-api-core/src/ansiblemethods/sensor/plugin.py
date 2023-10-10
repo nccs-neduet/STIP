@@ -233,3 +233,21 @@ def ansible_check_plugin_integrity(system_ip):
 
     return rc, output
 
+def ansible_move_plugin_files(filename):
+    """
+    """
+    system_ip="127.0.0.1"
+    command = "/usr/bin/plugin_service " + filename
+
+    try:
+        response = ansible.run_module(host_list=[system_ip], module="command", use_sudo="True", args=command)
+    except Exception, exc:
+        error_msg = "Ansible Error: An error occurred while moving files: %s" % str(exc)
+        api_log.error(error_msg)
+        return False, error_msg
+
+    (success, msg) = ansible_is_valid_response(system_ip, response)
+    if success:
+        return success, response['contacted'][system_ip]['stdout']
+    else:
+        return success, msg
