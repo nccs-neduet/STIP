@@ -119,29 +119,30 @@ class Plugin_provider extends Provider
     
     
     /**
-     * This method finishes the upload plugin wizard
+     * This method save the plugin to its destination
      *
      * @param  string  $file
      * @param  string  $vendor
      * @param  string  $model
      * @param  string  $version
-     * @param  boolean $overwrite
      *
      * @return object
      */
-    public function save_plugin($file, $vendor, $model, $version, $product_type, $overwrite)
+    public function save_plugin($file,$plugin_id,$vendor,$model,$version,$product_type,$nsids)
     {
+
         $params = array(
             'plugin_file' => $file,
+            'plugin_id'   => $plugin_id,
             'vendor'      => $vendor,
             'model'       => $model,
             'version'     => $version,
             'product_type'=> $product_type,
-            'overwrite'   => ($overwrite) ? 'true' : ''
+            'nsids'       => $nsids
         );
-        
-        $response = $this->conn->do_request($this->common_url.'/upload' , $params, 'POST');
-    
+        $response = $this->conn->do_request($this->common_url.'/save' , $params, 'POST');
         return $response;
     }
+
 }
+

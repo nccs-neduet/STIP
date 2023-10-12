@@ -89,8 +89,6 @@ $av_plugin   = new Av_plugin();
         );
         
         Util::print_include_files($_files, 'css');
-
-
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                                 'def_path' => TRUE),
@@ -107,7 +105,7 @@ $av_plugin   = new Av_plugin();
             array('src' => 'jquery.md5.js',                                 'def_path' => TRUE),
             array('src' => 'jquery.placeholder.js',                         'def_path' => TRUE),
             array('src' => 'jquery.dropdown.js',                            'def_path' => TRUE),
-            array('src' => '/av_plugin/js/plugin_list.js.php',              'def_path' => FALSE)
+            array('src' => '/av_plugin/js/plugin_list.js.php',              'def_path' => FALSE),
         );
         
         Util::print_include_files($_files, 'js');
@@ -117,11 +115,16 @@ $av_plugin   = new Av_plugin();
     <script type='text/javascript'>
 
         /**********  LIGHTBOX EVENTS  **********/
-	function GB_onclose(url, params){
-		if (url != "/ossim/av_plugin/views/add_plugin.php") return;
-		$.post("/ossim/session/token.php",{'f_name': 'plugin_actions'},function(data) {
-			data = {"token": $.parseJSON(data).data, "action":"rollback"}
-			$.post('<?php echo AV_MAIN_PATH . "/av_plugin/controllers/plugin_actions.php" ?>',data);
+        function GB_onclose(url, params) {
+            if (url != "stip/av_plugin/views/add_plugin.php") return;
+            $.post("stip/session/token.php", {
+                'f_name': 'plugin_actions'
+            }, function(data) {
+                data = {
+                    "token": $.parseJSON(data).data,
+                    "action": "rollback"
+                }
+                $.post('<?php echo AV_MAIN_PATH . "/av_plugin/controllers/plugin_actions.php" ?>', data);
 			location.href = location.href;
 		});
 	}
@@ -142,9 +145,6 @@ $av_plugin   = new Av_plugin();
             }
         }
 
-
-        
-    
         $(document).ready(function() 
         {
             var list = new av_plugin_list();
@@ -159,7 +159,6 @@ $av_plugin   = new Av_plugin();
             }
             ?>
             
-
             // ToolTips
             $(".info").tipTip({maxWidth: '380px'});
 
@@ -184,11 +183,8 @@ $av_plugin   = new Av_plugin();
             });
 
             // Add New Plugin
-            $('[data-bind="add-plugin"]').click(function()
-            {
-                var url   = "<?php echo AV_MAIN_PATH . "/av_plugin/views/add_plugin.php" ?>";
-                var title = "<?php echo Util::js_entities(_('Add New Plugin')) ?>";
-                GB_show(title, url, '600', '1250');
+            $('[data-bind="add-plugin"]').click(function() {
+                document.location.assign("/ossim/av_plugin/addPlugin.php?m_opt=configuration&sm_opt=deployment&h_opt=plugins");
             });
 
             // Delete button
@@ -218,23 +214,17 @@ $av_plugin   = new Av_plugin();
     
     </form>
 
-    
-    
-    
     <div id='main_container'>
         
         <div class="content">
             
             <div id="plugin_notif"></div>
 
-            
             <div id='plugin_section_title'>
             
                 <?php echo _('Plugins') ?>
                 
-            </div>
-            
-            
+            </div>            
             
             <div id='content_result'>
                 
@@ -251,7 +241,6 @@ $av_plugin   = new Av_plugin();
                     <img id='delete_selection' data-bind='delete-plugins' class='img_action disabled info' title='<?php echo _('Delete selected plugins') ?>' src="/ossim/pixmaps/delete.png"/>
     
                 </div>
-                
                 <div data-name="plugins" data-bind="av_table_plugins">
     
                     <table class="table_data" id="table_data_plugins">

@@ -22,10 +22,12 @@ $(document).ready(function () {
 });
 
 // Defined method to close gb_show()
-function close_modal() {
+function close_final_modal() {
     window.sessionStorage.removeItem('mode');
     parent.window.location.reload();
-
+}
+function close_modal() {
+    parent.GB_close();
 }
 
 // Showing upload file button and validating file on upload
@@ -66,7 +68,7 @@ function step1() {
                 }
             });
         } else {
-            $(".loader-ovrd").hide();
+            $(".loader-ovrd").hide(); 
             $("#err_msg").text("*Log File Required");
         }
     });
@@ -297,7 +299,6 @@ function genRegex() {
     });
 
     arrayProcessing.uniqueLogandRegex.push([$('#rg_raw_input_text').val(), regexp]);
-
     removeItem(regexp);
     $('.rg-item-selected').trigger('click');
 
@@ -339,11 +340,11 @@ function genRegex() {
                 success: function (response) {
                     var data = JSON.parse(response);
                     if (data['status'] == 'OK') {
-                        $(".loader-ovrd").hide();
+                        $(".loader-ovrd").hide(); 
                         step3(data);
 
                     } else {
-                        $(".loader-ovrd").hide();
+                        $(".loader-ovrd").hide(); 
                         alert('Something went wrong');
 
                     }
@@ -358,7 +359,7 @@ function genRegex() {
 /* my added code */
 $(document)
     .ajaxStart(function () {
-        $(".loader-ovrd").show();
+        $(".loader-ovrd").show(); 
     });
 
 
@@ -373,7 +374,6 @@ var colselection;
 // Adding Greybox
 function toggle_modal(e) {
     // e.stopPropagation();
-    window.sessionStorage.setItem("arr_items2", "12345");
     var row = $(e).parent().parent();
 
     colselection = row.find("td:nth-child(4)");
@@ -478,19 +478,10 @@ $(document).on('click', '#btnFinalNext', function () {
 $(document).on('click', '#btnPluginFinish', function () {
     var fd = new FormData();
 
-    // var pgid = $("#txtPluginId").val();
-    // var pgname = $("#txtPluginName").val();
-    // var prodType = $("#txtProductType").val();
-    // var vendor = $("#txtVendor").val();
-    // var model = $("#txtModel").val();
-    // var version = $("#txtVersion").val();
-    // var descp = $("#txtDescription").val();
-
     fd.append("action", "generateplugin");
     var arr = JSON.parse(sessionStorage.getItem("final_plugin_details"));
    
     var eventsData = JSON.parse(window.sessionStorage.getItem('eventsData'));
-    // window.sessionStorage.removeItem("final_plugin_details");
     window.sessionStorage.removeItem("eventsData");
    
     for (i = 0; i < arr.length; i++) {
@@ -509,16 +500,11 @@ $(document).on('click', '#btnPluginFinish', function () {
         success: function (response) {
             var data = JSON.parse(response);
             if (data["status"] == "OK") {
-                console.log(data);
                 window.sessionStorage.clear();            
-                close_modal();
-                console.log(0);
+                close_final_modal();
                 window.location.reload();
-                document.getElementById("back_button").click();
-                console.log(1);
+                document.getElementById("back_button").click();        
                 
-                
-                //$("#add_button").click();
             }
         }
     });
@@ -577,8 +563,7 @@ function save_modal_data() {
     eventDetail.classification = classification;
     eventDetail.priority = priority;
     eventDetail.reliablity = reliablity;
-    // if(eventDetail.regex.length === 0)
-    // {
+
     var regex = "";
     var arr = JSON.parse(sessionStorage.getItem("arr_items"));
   
@@ -600,7 +585,7 @@ function save_modal_data() {
         }
     }
     eventDetail.regex = 'regexp="' + regex + '"';
-    //}
+    
     window.parent[0].colselection[0].innerHTML = "Done";
     eventsData.push(eventDetail);
     var oldItems = JSON.parse(sessionStorage.getItem('eventsData')) || [];
@@ -695,24 +680,7 @@ function tokenization() {
 
     window.sessionStorage.setItem("arr_items", JSON.stringify(arr));
     /********************* Need an else there for the validation of selection of opt IF NEEDED ***********************/
-    // var regex = "";
-    // for (i = 0; i < arr.length; i++) {
-    //     if (i != arr.length - 1) {
-    //         if (arr[i + 1][0] == "") {
-    //             regex = regex + arr[i][1] + " ";
-    //         } else if (arr[i + 1][0] == "/") {
-    //             regex = regex + arr[i][1] + "\\";
-    //         } else {
-    //             regex = regex + arr[i][1];
-    //         }
 
-
-    //     } else {
-    //         regex = regex + arr[i][1];
-    //     }
-    // }
-
-    // eventDetail.regex = 'regexp="' + regex + '"';
     if (opt == "date") {
         eventDetail.date = "date={normalize_date($date)}";
     } else if (opt == "device") {
