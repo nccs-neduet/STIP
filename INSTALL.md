@@ -6,31 +6,43 @@ Install debian 9 with minimal installation only with ssh-server and system utili
 ```
 
 After installation do the following steps:
-```
-apt-get update
 
-install ssh : apt-get install ssh
-nano /etc/ssh/sshd_config 
-permit root login
+### Update the package list
+`apt-get update`
 
-apt-get -y install git
-git clone https://github.com/nccs-neduet/STIP.git
+### Install SSH
+`apt-get install ssh`
 
-nano ~/.bashrc
-### At the bottom of the file add following lines
-export STIP_PATH=/root/STIP
-source ~/.bashrc
+### Edit SSH configuration file
+`nano /etc/ssh/sshd_config `
+set "permit root login" as "Yes"
+
+### Install Git
+`apt-get -y install git`
+
+### Clone the repository
+`git clone https://github.com/nccs-neduet/STIP.git`
+
+### Edit bashrc file
+`nano ~/.bashrc`
+
+#### At the bottom of the file add following lines
+`export STIP_PATH=/root/STIP`
+
+`source ~/.bashrc`
 
 ### Change interface name from ensp03 to eth0:
 
-nano /etc/default/grub
-### change GRUB_CMDLINE_LINUX="" to GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"
-grub-mkconfig -o /boot/grub/grub.cfg
-reboot
+#### Edit grub configuration
+`nano /etc/default/grub`
+#### change GRUB_CMDLINE_LINUX="" to GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"
+`grub-mkconfig -o /boot/grub/grub.cfg`
+
+`reboot`
 
 ### After the reboot, configure the interface at /etc/network/interfaces
-# The primary network interface
-auto eth0
+### The primary network interface
+```auto eth0
 iface eth0 inet static
    address xxx.xxx.xxx.xxx/xx [24,32, etc]
    netmask xxx.xxx.xxx.xxx
@@ -41,37 +53,48 @@ iface eth0 inet static
    dns-search alienvault
    up ip link set $IFACE promisc on
    down ip link set $IFACE promisc off
+```
+`reboot`
 
-reboot
+### Add keys
+`cd /root/STIP/ossim-repo-key`
 
-cd /root/STIP/ossim-repo-key
-/usr/bin/apt-key add data_gpg.key
-/usr/bin/apt-key add alienvault.asc
+`/usr/bin/apt-key add data_gpg.key`
 
-nano /etc/apt/sources.list
-and add following
+`/usr/bin/apt-key add alienvault.asc`
 
+### Edit sources list
+
+`nano /etc/apt/sources.list`
+### And add following
+```
 deb http://data.alienvault.com/alienvault58/alienvault/ binary/
 deb http://data.alienvault.com/alienvault58/feed/ binary/
 deb http://data.alienvault.com/alienvault58/plugins-feed/ binary/
 deb http://data.alienvault.com/alienvault58/mirror/debian/ stretch main contrib
 deb http://data.alienvault.com/alienvault58/mirror/debian-security/ stretch/updates main contrib
+```
+### Update package list
+`apt-get update`
 
-apt-get update
+### Install specific Linux image
+`apt-get install linux-image-4.19.0-0.deb9.24-amd64`
 
-apt-get install linux-image-4.19.0-0.deb9.24-amd64
-reboot
+`reboot`
 
-#### Need to install the following commands in order to run dpkg-buildpackages
-apt-get install -y build-essential devscripts debhelper
+##### Need to install the following commands in order to run dpkg-buildpackages
+`apt-get install -y build-essential devscripts debhelper`
 
-#### To run debi command
-apt-get install -y automake config-package-dev debhelper devscripts dh-autoreconf dh-virtualenv docbook-to-man dpatch gettext libbson-dev libcairo2-dev libffi-dev libgda-5.0-dev libglib2.0-dev libgnet-dev sudo
+### Install debi command
+`apt-get install -y automake config-package-dev debhelper devscripts dh-autoreconf dh-virtualenv docbook-to-man dpatch gettext libbson-dev libcairo2-dev libffi-dev libgda-5.0-dev libglib2.0-dev libgnet-dev sudo`
 
+```
 cd /root/STIP/ossim-repo-key/
 dpkg-buildpackage -uc -us
 sudo debi
-
+```
+### Build and install packages:
+```
 apt-get install -y libbson-dev docbook-to-man libglib2.0-dev libgda-5.0-dev libgnet-dev zlib1g-dev libjson-glib-dev libmaxminddb-dev python-all-dev python-setuptools dpatch libssl-dev uuid-dev libpcre3-dev libsoup2.4-dev php7.0-mbstring curl
 
 cd /root/STIP/alienvault-dummies-config
@@ -443,6 +466,7 @@ debi alienvault-nfsen
 
 cd /root/STIP/ossim-cd-tools
 debi
-
-ossim-reconfig
 ```
+
+### Run ossim-reconfig at the end
+`ossim-reconfig`
