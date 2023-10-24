@@ -37,7 +37,11 @@ set "permit root login" as "Yes"
 
 #### Edit grub configuration
 `nano /etc/default/grub`
-#### change GRUB_CMDLINE_LINUX="" to GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"
+ 
+#### change the following
+
+`GRUB_CMDLINE_LINUX="" to GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"`
+
 `grub-mkconfig -o /boot/grub/grub.cfg`
 
 `reboot`
