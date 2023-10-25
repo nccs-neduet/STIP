@@ -8,7 +8,7 @@ PyYAML==3.10
 Pygments==1.6
 SQLAlchemy==0.8.2
 Sphinx==1.2b1
-Werkzeug==0.9.1
+Werkzeug==3.0.1
 amqp==1.4.9
 ansible==1.9.6
 anyjson==0.3.3
