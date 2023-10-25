@@ -144,7 +144,6 @@ dpkg-buildpackage -uc -us
 debi
 
 cd /root/STIP/alienvault-dummies-config
-dpkg-buildpackage -uc -us
 debi alienvault-firewall
 
 cd /root/STIP/alienvault-doctor/
