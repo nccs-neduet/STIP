@@ -10,7 +10,7 @@ SQLAlchemy==0.8.2
 Sphinx==1.2b1
 Werkzeug==0.9.1
 amqp==1.4.9
-ansible==1.9.6
+ansible==7.0.0
 anyjson==0.3.3
 argparse==1.2.1
 billiard==3.3.0.23
