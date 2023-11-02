@@ -19,7 +19,7 @@ decorator==3.4.0
 distribute==0.6.34
 docutils==0.10
 httplib2==0.8
-ipython==0.13.2
+ipython==8.10.0
 itsdangerous==0.22
 kombu==3.0.37
 mimeparse==0.1.3
