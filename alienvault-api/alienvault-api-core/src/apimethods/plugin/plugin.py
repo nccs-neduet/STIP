@@ -30,7 +30,7 @@
 # Functions to deal with custom plugins.
 
 import os
-from shutil import copy
+from shutil import copy, move
 from os.path import splitext, basename
 
 import api_log
@@ -55,6 +55,7 @@ from apiexceptions.plugin import (
     APIInvalidPlugin,
     APIPluginFileNotFound,
     APICannotBeRemoved,
+    APICannotCheckPlugin
 )
 from ansiblemethods.sensor.detector import (
     get_sensor_detectors,
@@ -64,11 +65,15 @@ from ansiblemethods.sensor.detector import (
     disable_plugin_globally,
     disable_plugin_per_assets,
 )
+
+from ansiblemethods.sensor.plugin import ansible_move_plugin_files
 from ansiblemethods.helper import remove_file
 
 TEMPORAL_FOLDER = "/var/lib/asec/plugins/"
 PLUGINS_FOLDER = "/etc/ossim/agent/plugins/"
 END_FOLDER = "/etc/alienvault/plugins/custom/"
+PLUGIN_UPLOAD_FOLDER = "/usr/share/ossim/www/av_plugin/views/plugin_builder/upload/"
+LOG_FOLDER = "/var/log/customlog/"
 
 
 def apimethod_get_plugin_list():
@@ -165,6 +170,82 @@ def apimethod_upload_plugin(plugin_file, vendor, model, version, product_type, o
     # the list of plugin sids for the plugin.
     return data
 
+
+def apimethod_save_plugin(plugin_file,plugin_id,vendor,model,version,product_type,nsids):
+    """Move the uploaded file from upload folder to PLUGINS_FOLDER
+    Args:
+        plugin_file (str) = The plugin you want to download
+    Returns:
+        Returns the content of the given plugin file
+    """
+    try:
+        plugin_src_path = os.path.join(PLUGIN_UPLOAD_FOLDER, plugin_file+'.cfg')
+        sql_src_path = os.path.join(PLUGIN_UPLOAD_FOLDER, plugin_file+'.sql')
+
+        # if not (os.path.isfile(plugin_src_path) or os.path.isfile(sql_src_path)):
+        #     raise APIPluginFileNotFound(plugin_src_path)
+        plugin_f=plugin_file+".cfg"
+        plugin_s=plugin_file+".sql"
+    
+        # success1, movedcfg = copy(plugin_src_path, END_FOLDER)
+        # success2, movedsql = copy(sql_src_path, END_FOLDER)
+
+        success, msg = ansible_move_plugin_files(plugin_file)
+
+        if success:
+            
+            # Remove via ansible due to file permissions
+            # remove_file(['127.0.0.1'], plugin_src_path)
+            # remove_file(['127.0.0.1'], sql_src_path)
+            
+            temporal_plg_path = os.path.join(END_FOLDER, plugin_file)
+            temporal_plg_sql_path = temporal_plg_path + '.sql'
+
+            # Load plugin SQl into the DB.
+            with open(temporal_plg_sql_path) as plugin_raw_sql:
+                success, msg = save_plugin_from_raw_sql(plugin_raw_sql.read())
+                if not success:
+                    raise APICannotSavePlugin(msg)
+
+            # Save plugin data.
+            success, msg = insert_plugin_data(plugin_id,
+                                                plugin_name=plugin_f,
+                                                vendor=vendor,
+                                                model=model,
+                                                version=version,
+                                                nsids=nsids,
+                                                product_type=product_type)
+            if not success:
+                raise APICannotSavePlugin(msg)
+        else:
+            raise APICannotCheckPlugin(msg)
+
+
+    except Exception as e:
+        raise APIPluginFileNotFound(e)
+    return True
+
+    
+def apimethod_download_plugin(plugin_file):
+    """Returns the content of a given plugin file
+    Args:
+        plugin_file (str) = The plugin you want to download
+    Returns:
+        Returns the content of the given plugin file
+    """
+    try:
+        plugin_path = "{}{}".format(END_FOLDER, plugin_file)
+        if not os.path.isfile(plugin_path):
+            plugin_path = "{}{}".format(PLUGINS_FOLDER, plugin_file)
+            if not os.path.isfile(plugin_path):
+                raise APIPluginFileNotFound(plugin_file)
+        with open(plugin_path) as plugin_file:
+            data = plugin_file.read()
+    except:
+        raise
+    return data
+
+    
 def remove_plugin_from_sensors(plugin_file):
     """ Disable and remove custom plugin from all systems.
     Args:
@@ -229,21 +310,4 @@ def apimethod_remove_plugin(plugin_file):
             raise
 
 
-def apimethod_download_plugin(plugin_file):
-    """Returns the content of a given plugin file
-    Args:
-        plugin_file (str) = The plugin you want to download
-    Returns:
-        Returns the content of the given plugin file
-    """
-    try:
-        plugin_path = "{}{}".format(END_FOLDER, plugin_file)
-        if not os.path.isfile(plugin_path):
-            plugin_path = "{}{}".format(PLUGINS_FOLDER, plugin_file)
-            if not os.path.isfile(plugin_path):
-                raise APIPluginFileNotFound(plugin_file)
-        with open(plugin_path) as plugin_file:
-            data = plugin_file.read()
-    except:
-        raise
-    return data
+

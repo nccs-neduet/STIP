@@ -1,0 +1,314 @@
+.plgn_accord_cont {
+    margin: 30px !important;
+    border: 5px solid transparent !important;
+    background-color: transparent !important;
+    position: relative;
+    
+}
+label, select, input, #logLine, #result, button{
+    font-family: Lucida,sans-serif,Verdana;
+}
+.plgn_accord_body {
+    /* height: 50vh; */
+}
+
+.upload_btn {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.plgn_form_cont {
+    width: 40%;
+    margin: auto;
+    padding: 20px 30px 20px 60px;
+    border: 1px solid #E4E4EB;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+}
+
+.plgn_form_cont>p {
+    font-size: 16px;
+    /* font-weight: bolder; */
+    margin-top: 10px;
+}
+
+.plgn_form_cont>div>div>div {
+    width: 49%;
+    display: inline-block;
+    /* border: 1px solid grey;; */
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+
+.plgn_form_cont>div>div>div:nth-child(7) {
+    width: 99%;
+}
+
+.plgn_form_cont>div>div>div input,
+.plgn_form_cont>div>div>div textarea,
+.plgn_mdl_tbl tbody td input,
+.plgn_mdl_tbl tbody td textarea,
+ .plgn_mdl_tbl tbody td #logLine, #result{
+    width: 90%;
+    margin: auto;
+    font-size: 11px;
+    margin-top: 10px;
+    -webkit-appearance: none;
+    padding: 8px 4px 8px 14px;
+    background: rgba(150, 150, 150, 0.1);
+    border: none;
+    border-radius: 2px;
+    transition: all 0.5s ease;
+}
+.plgn_form_cont>div>div>div input:focus, 
+.plgn_mdl_tbl tbody td input:focus,
+.plgn_mdl_tbl tbody td input:focus-visible{
+    border: 1px solid #E4E4EB;
+    outline: none;
+  
+}
+.plgn_form_cont>div>div>div input:focus::placeholder{
+    
+    
+}
+
+.plgn_form_cont>div>div>div select,.plgn_mdl_tbl tbody td select {
+    width: 93%;
+    margin: auto;
+    font-size: 11px;
+    margin-top: 10px;
+    -webkit-appearance: none;
+    border: none;
+    border-radius: 2px;
+    height: 30px;
+    padding: 7px;
+    color: gray;
+    background: rgba(150, 150, 150, 0.1);
+    transition: all 0.5s ease;
+}
+/* .plgn_mdl_tbl tbody td select, .plgn_mdl_tbl tbody td input, .plgn_mdl_tbl tbody td label, .plgn_mdl_tbl tbody td .logLine_td, .plgn_mdl_tbl tbody td textarea{
+    font-size: 15px!important;
+} */
+
+.plgn_mdl_tbl tbody td label{
+    font-size: 15px!important;
+}
+.plgn_mdl_tbl tbody td select{
+    color: black!important;
+}
+.plgn_form_cont>div>div>div select:focus-visible,
+.plgn_mdl_tbl tbody td select:focus-visible{
+    border: 1px solid #E4E4EB!important;
+    outline:none;
+}
+.plgn_form_cont>div>div>div>label,
+.plgn_mdl_tbl tbody td label {
+    font-size: 11px;
+    margin-bottom: 10px;
+}
+
+.plgn_form_cont>div>div>div textarea,
+.plgn_mdl_tbl tbody td textarea{
+    width: 95%;;
+}
+
+.plgn_form_cont>div>div>div textarea:focus-visible{
+    border: 1px solid #E4E4EB!important;
+    outline:none;
+}
+.plgn_mdl_tbl tbody td input,
+.plgn_mdl_tbl tbody td select{
+    transition: none !important;
+}
+.plugin_table{
+    width: 100%;
+    margin-top: 100px;
+}
+
+.edit-icon{
+    color: white;
+}
+
+.loader-ovrd{
+    z-index: 2;
+}
+
+.plugin_table tbody td{
+    width: 40%;
+}
+
+.plugin_table tbody td button{
+    background: none!important;
+    color: #6d224e!important;
+    transition: all 0.5s ease;
+
+}
+.plugin_table tbody td button:hover{
+    color: white!important;
+    background-color:#6d224e!important ;
+}
+
+.plgn_mdl_tbl tbody td{
+    width: 50%;
+    padding-bottom: 20px;
+}
+
+.plgn_mdl_tbl tbody td:nth-child(odd){
+    padding-right: 20px;
+}
+
+.plgn_mdl_tbl{
+    margin: auto;
+    margin-top: 40px;
+    padding: 0 20px;
+}
+
+.logLine_td{
+    width: 100%!important;
+    padding: 10px 10px 10px 0px;
+    position: relative;
+}
+#logline, #result{
+    font-size: 15px!important;
+    padding: 0px;
+    width: 100%!important;
+}
+#result{
+    border-bottom:1px solid ghostwhite;
+    padding: 10px;
+}
+
+.m_btn{
+    margin-top:27px;
+        color: white;
+    text-decoration: none;
+    text-transform: uppercase;
+    text-align: center;
+    border: none;
+    padding: 6px 10px;
+    background: #6d224e;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 2px;
+    top: 0px;
+}
+.m_btn:hover{
+        background-color: #c74a4b;
+}
+.td_center{
+    text-align: center;
+}
+.td_opts > button{
+    margin-top: 50px;
+}
+
+.final_plgn_tbl{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    /* border: 1px solid black; */
+}
+.final_plgn_tbl thead tr td{
+    border-bottom: 1px solid black;
+    color: white;
+    text-align: center;
+    background-color: #872e4d;
+    vertical-align: middle;
+}
+.final_plgn_tbl thead tr td h5{
+    margin-top: 20px;
+}
+.final_plgn_tbl tbody tr td{
+    padding-left: 10px;
+    padding-top: 10px;
+    border-bottom: #872e4d solid 1px;
+    width: 50%;
+    transition: 0.4s all;
+}
+.final_plgn_tbl tbody tr:hover{
+    background-color: #f5e3e9;
+    position: relative;
+    top: 3px;
+}
+.final_plgn_tbl + div{
+    width: 100%;
+    text-align: center;
+}
+.final_plgn_tbl + div div{
+    display: inline;
+}
+.final_plgn_tbl + div + div{
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-evenly;
+
+}
+.final_plgn_tbl + div + div button{
+    color: white;
+    text-decoration: none;
+    text-transform: uppercase;
+    text-align: center;
+    border: none;
+    padding: 6px 10px;
+    background: #6d224e;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 2px;
+    top: 0px;            
+}
+.final_plgn_tbl + div + div button:hover{
+    background-color: #c74a4b;
+}
+
+.final_nxt_btn_parent_div{
+    text-align: right;
+    margin-top: 20px;
+}
+
+.assign_btn_div{
+    text-align: left;
+
+}
+#clear_results{
+    color: #6d224e;
+    position:absolute;
+    top: 25px;
+    right: 1px;
+    font-size: 10px;
+    user-select: none;
+    cursor: pointer;
+}
+
+
+#btnAssign:disabled,
+btnAssign[disabled]{
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #666666;
+}
+
+#result_err{
+    color:darkred;
+    font-size: 14px;
+}
+
+.pluginContainer{
+    margin-top: 20px;
+    height: auto;
+    position: fixed;
+    width: 400px;
+    right: -210px;
+}
+
+#err_msg
+{
+    color: red;
+    font-size: 14px;
+    display: block;
+    padding-top: 10px;
+}

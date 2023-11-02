@@ -51,22 +51,6 @@ if (!Session::am_i_admin())
 }
 
 $tz = Util::get_timezone();
-
-// Retrieve the plugin list from the API
-$av_plugin   = new Av_plugin();
-$error       = '';
-$plugin_list = array();
-try
-{
-    $plugin_list = $av_plugin->get_plugin_list();
-}
-catch(Exception $e)
-{
-    $error = $e->getMessage();
-}
-
-$av_plugin   = new Av_plugin();
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -89,6 +73,9 @@ $av_plugin   = new Av_plugin();
         );
         
         Util::print_include_files($_files, 'css');
+    echo '<style>';
+    echo Util::get_css_content('/usr/share/ossim/www/av_plugin/views/plugin_builder/css/accordion_css.css')."\n";
+    echo '</style>';
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                                 'def_path' => TRUE),
@@ -105,7 +92,8 @@ $av_plugin   = new Av_plugin();
             array('src' => 'jquery.md5.js',                                 'def_path' => TRUE),
             array('src' => 'jquery.placeholder.js',                         'def_path' => TRUE),
             array('src' => 'jquery.dropdown.js',                            'def_path' => TRUE),
-            array('src' => '/av_plugin/js/plugin_list.js.php',              'def_path' => FALSE),
+            array('src' => '/av_plugin/views/plugin_builder/js/accordion_js.js',    'def_path' => FALSE),
+            array('src' => '/av_plugin/views/plugin_builder/js/regex-generator.js',    'def_path' => FALSE),
         );
         
         Util::print_include_files($_files, 'js');
@@ -143,13 +131,10 @@ $av_plugin   = new Av_plugin();
                 var _url               = top.av_menu.get_menu_url(_sids_url, 'configuration', 'threat_intelligence', 'data_source');
                 document.location.href = _url;
             }
-        }
-
+        }    
+    
         $(document).ready(function() 
         {
-            var list = new av_plugin_list();
-            list.init();
-            
             // Error from the API
             <?php if ($error != '')
             {
@@ -159,39 +144,15 @@ $av_plugin   = new Av_plugin();
             }
             ?>
             
+
             // ToolTips
             $(".info").tipTip({maxWidth: '380px'});
 
-            // Check All
-            $('[data-bind="chk-all-plugins"]').on('change', function()
-            {
-                var status = $('[data-bind="chk-all-plugins"]').prop('checked');
-                $('.plugin_check:enabled').prop('checked', status).trigger('change');
-            });
-            
-            // Search Input
-            $('[data-bind="search-plugin"]').on('keyup', function()
-            {
-                list.table.dt.fnFilter(this.value);
-            
-            }).on('input', function()
-            {
-                if ($(this).val() == '')
-                {
-                    list.table.dt.fnFilter(this.value);
-                }
+            // Go back to Plugin Page
+            $('[data-bind="list-plugin"]').click(function() {
+                document.location.assign("/ossim/av_plugin/index.php?m_opt=configuration&sm_opt=deployment&h_opt=plugins");
             });
 
-            // Add New Plugin
-            $('[data-bind="add-plugin"]').click(function() {
-                document.location.assign("/ossim/av_plugin/addPlugin.php?m_opt=configuration&sm_opt=deployment&h_opt=plugins");
-            });
-
-            // Delete button
-            $('[data-bind="delete-plugins"]').click(function()
-            {
-                list.delete_plugins();
-            });
         });
 
     </script>
@@ -205,15 +166,7 @@ $av_plugin   = new Av_plugin();
     //Local menu
     include_once '../local_menu.php';
 ?>
-
-    <!-- Download form launcher -->
-    <form id='download_form' method='post' action='<?php echo AV_MAIN_PATH . "/av_plugin/controllers/download_plugin.php" ?>'>
     
-        <input type='hidden' name='token'       id='download_form_token'       value=''/>
-        <input type='hidden' name='plugin'      id='download_form_plugin'      value=''/>
-    
-    </form>
-
     <div id='main_container'>
         
         <div class="content">
@@ -221,98 +174,20 @@ $av_plugin   = new Av_plugin();
             <div id="plugin_notif"></div>
 
             <div id='plugin_section_title'>
-            
                 <?php echo _('Plugins') ?>
-                
-            </div>            
+            </div>
             
             <div id='content_result'>
-                
-                <div id='search_container'>
-                    
-                    <input type='search' id='search_filter' data-bind='search-plugin' class='input_search_filter' placeholder='<?php echo _('Search') ?>' />
-                    
-                </div>
-                
+                                
                 <div id='action_buttons'>
                     
-                    <input type='button' id='add_button' data-bind='add-plugin' value='<?php echo _('Add New Plugin') ?>' />
-                    
-                    <img id='delete_selection' data-bind='delete-plugins' class='img_action disabled info' title='<?php echo _('Delete selected plugins') ?>' src="/ossim/pixmaps/delete.png"/>
+                    <input type='button' id='back_button' data-bind='list-plugin' value='<?php echo _('Go Back') ?>' />
     
                 </div>
-                <div data-name="plugins" data-bind="av_table_plugins">
-    
-                    <table class="table_data" id="table_data_plugins">
-                        <thead>
-                            <tr>
-                                
-                                <th class="center"><input type='checkbox' data-bind='chk-all-plugins'/></th>
-                                
-                                <th>
-                                    <?php echo _('Plugin ID') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Vendor') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Model') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Version') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Last Update') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Event Types') ?>
-                                </th>
-                                
-                                <th>
-                                    <?php echo _('Action') ?>
-                                </th>
-                                
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                            <?php
-                            if (count($plugin_list) > 0)
-                            {
-                                foreach ($plugin_list as $plugin_data)
-                                {
-                                    $check_disabled = ($plugin_data['plugin_type'] < 1) ? 'disabled' : '';
-                                ?>
-                                
-                                <tr>
-                                    <td>
-                                        <input type='checkbox' class='plugin_check' name='<?php echo $plugin_data['plugin_name'] ?>' value='1' <?php echo $check_disabled ?>/>
-                                    </td>
-                                    <td><?php echo $plugin_data['plugin_id'] ?></td>
-                                    <td><?php echo $plugin_data['vendor'] ?></td>
-                                    <td><?php echo $plugin_data['model'] ?></td>
-                                    <td><?php echo $plugin_data['version'] ?></td>
-                                    <td><?php echo gmdate("m/d/Y H:i:s", strtotime($plugin_data['last_update'])  + (3600*$tz)) ?></td>
-                                    <td><?php echo Util::number_format_locale($plugin_data['nsids']) ?></td>
-                                    <td><a href="javascript:;" class="download_button" data-bind="download-plugin" data-plugin="<?php echo $plugin_data['plugin_name'] ?>">
-                                         <img src="/ossim/pixmaps/download_dt.png" border="0">
-                                        </a>
-                                    </td>
-                                </tr>
-                                
-                                <?php
-                                }
-                            }
-                            ?>
-                            
-                        </tbody>
-                    </table>
-                    
+                <!-- Including accordion -->
+                <?php
+                    include_once 'views/plugin_builder/accordion_data.php';
+                ?>
                 </div>
                 
 
@@ -327,6 +202,4 @@ $av_plugin   = new Av_plugin();
 
 </html>
 
-<?php
-/* End of file list.php */
-/* Location: /av_backup/controllers/backup_actions.php */
+
