@@ -1,6 +1,6 @@
 Flask==0.10.1
 Flask-SQLAlchemy==0.16
-Jinja2==2.7
+Jinja2==2.11.3
 MarkupSafe==0.18
 MySQL-python==1.2.4
 PyMySQL==0.5
